@@ -6,8 +6,12 @@ HEADERS = $(shell find -name "*.h")
 SRCS = $(shell find -name "*.cpp")
 OBJS = $(SRCS:.cpp=.o)
 
+DEBUG_BUILD_FLAGS = -O0 -g -Wall
+
+# %.o: %.cpp $(HEADERS)
+# 	$(CXX) -c -o $@ $< $(PCAPPP_BUILD_FLAGS) $(PCAPPP_INCLUDES)
 %.o: %.cpp $(HEADERS)
-	$(CXX) -c -o $@ $< $(PCAPPP_BUILD_FLAGS) $(PCAPPP_INCLUDES)
+	$(CXX) -c -o $@ $< $(DEBUG_BUILD_FLAGS) $(PCAPPP_INCLUDES)
 
 main: $(OBJS)
 	$(CXX) -o $@ $^ $(PCAPPP_LIBS_DIR) -static-libstdc++ $(PCAPPP_LIBS)
