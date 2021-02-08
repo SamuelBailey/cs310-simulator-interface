@@ -3,6 +3,7 @@
 !*.*
 !Makefile
 !compile
+!run-capture
 
 *.o
 .vscode/

@@ -14,6 +14,8 @@
 static volatile bool running = true;
 
 static ThreadSafeQueue queue;
+static pcpp::PcapLiveDevice *rxDev;
+static pcpp::PcapLiveDevice *txDev;
 
 static void ctrlCHandler(int) {
     std::cout << "\nInterrupt detected, performing graceful shutdown" << std::endl;
@@ -37,11 +39,11 @@ static void onPacketArrival(pcpp::RawPacket *rawPacket, pcpp::PcapLiveDevice *de
         std::cout << "Received a ping" << std::endl;
     }
 
-    std::cout << "Packet received on thread number " << std::this_thread::get_id() << std::endl;
+    std::cout << "Received packet with pointer " << rawPacket << std::endl;
 
     // queue.addToQueue(rawPacket, getTimeMicros() + WAIT_TIME_US);
 
-    // dev->sendPacket(*rawPacket);
+    txDev->sendPacket(*rawPacket);
 
     // if (dev->sendPacket(*rawPacket)) {
     //     std::cout << "Forwarded packet" << std::endl;
@@ -57,23 +59,24 @@ int main() {
 
     std::cout << "Hello, world" << std::endl;
 
-    pcpp::PcapLiveDevice *dev = pcpp::PcapLiveDeviceList::getInstance().getPcapLiveDeviceByName("vnic0");
+    rxDev = pcpp::PcapLiveDeviceList::getInstance().getPcapLiveDeviceByName("vnic0");
+    txDev = pcpp::PcapLiveDeviceList::getInstance().getPcapLiveDeviceByName("vnic1");
     // pcpp::PcapLiveDevice *dev = pcpp::PcapLiveDeviceList::getInstance().getPcapLiveDeviceByName("wlp5s0");
 
-    if (!dev) {
+    if (!rxDev || !txDev) {
         std::cerr << "Unable to acquire device" << std::endl;
         exit(1);
     } else {
         std::cout << "Acquired device" << std::endl;
     }
 
-    if (!dev->open()) {
+    if (!rxDev->open() || !txDev->open()) {
         std::cerr << "Unable to open the device" << std::endl;
         exit(1);
     }
 
-    if (!dev->startCapture(onPacketArrival, &programName)) {
-        std::cerr << "Unable to start packet capture" << std::endl;
+    if (!rxDev->startCapture(onPacketArrival, &programName)) {
+        std::cerr << "Unable to start packet capture for receiving device" << std::endl;
         exit(1);
     }
 
@@ -84,14 +87,15 @@ int main() {
     }
 
     std::cout << "Stopping capture of packets" << std::endl;
-    dev->stopCapture();
+    rxDev->stopCapture();
     // Needs to be after capture has been stopped, so more are not added to the
     // queue
     std::cout << "Closing queue" << std::endl;
     queue.close();
 
     std::cout << "Closing dev" << std::endl;
-    dev->close();
+    rxDev->close();
+    txDev->close();
 
     std::cout << "Exiting program" << std::endl;
 }
