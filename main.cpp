@@ -4,7 +4,8 @@
 #include <chrono>
 #include <PcapLiveDevice.h>
 #include <PcapLiveDeviceList.h>
-#include <PlatformSpecificUtils.h>
+// #include <PlatformSpecificUtils.h>
+#include <Logger.h>
 
 #include "packet-scheduler.h"
 #include "helper-functions.h"
@@ -43,6 +44,9 @@ static void onPacketArrival(pcpp::RawPacket *rawPacket, pcpp::PcapLiveDevice *de
 
     // queue.addToQueue(rawPacket, getTimeMicros() + WAIT_TIME_US);
 
+    // Check length of packet being sent
+    std::cout << "Length of packet: " << rawPacket->getRawDataLen() << std::endl;
+
     txDev->sendPacket(*rawPacket);
 
     // if (dev->sendPacket(*rawPacket)) {
@@ -56,6 +60,8 @@ int main() {
     std::string programName = "Geoff";
 
     setCtrlCHandler(ctrlCHandler);
+
+    // pcpp::LoggerPP::getInstance().setLogLevel(pcpp::LogModule::PcapLogModuleLiveDevice, pcpp::LoggerPP::LogLevel::Debug);
 
     std::cout << "Hello, world" << std::endl;
 
@@ -74,6 +80,9 @@ int main() {
         std::cerr << "Unable to open the device" << std::endl;
         exit(1);
     }
+
+    std::cout << "Receive device MTU: " << rxDev->getMtu() << std::endl;
+    std::cout << "Send device MTU: " << txDev->getMtu() << std::endl;
 
     if (!rxDev->startCapture(onPacketArrival, &programName)) {
         std::cerr << "Unable to start packet capture for receiving device" << std::endl;
