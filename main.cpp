@@ -9,14 +9,20 @@
 
 #include "packet-scheduler.h"
 #include "helper-functions.h"
+#include "scheduler.h"
+#include "sender.h"
 
-#define WAIT_TIME_US 5000000
+#define PACKET_DELAY_US 2000000 // Microseconds to delay packet transmission
 
 static volatile bool running = true;
 
-static ThreadSafeQueue queue;
+// static ThreadSafeQueue queue;
 static pcpp::PcapLiveDevice *rxDev;
 static pcpp::PcapLiveDevice *txDev;
+
+// Globals for managing threads
+PacketQueue packetQueue;
+PacketSender packetSender(&packetQueue, txDev);
 
 static void ctrlCHandler(int) {
     std::cout << "\nInterrupt detected, performing graceful shutdown" << std::endl;
@@ -28,9 +34,9 @@ static void schedulePacketAfter(pcpp::RawPacket *rawPacket, int milliseconds) {
     std::this_thread::sleep_for(std::chrono::milliseconds{milliseconds});
 }
 
-void startSendingPackets(pcpp::PcapLiveDevice *dev) {
-    queue.startSendLoop(dev);
-}
+// void startSendingPackets(pcpp::PcapLiveDevice *dev) {
+//     queue.startSendLoop(dev);
+// }
 
 static void onPacketArrival(pcpp::RawPacket *rawPacket, pcpp::PcapLiveDevice *dev, void *cookie) {
     std::string *progName = (std::string *)cookie;
@@ -42,12 +48,13 @@ static void onPacketArrival(pcpp::RawPacket *rawPacket, pcpp::PcapLiveDevice *de
 
     std::cout << "Received packet with pointer " << rawPacket << std::endl;
 
-    // queue.addToQueue(rawPacket, getTimeMicros() + WAIT_TIME_US);
-
     // Check length of packet being sent
     std::cout << "Length of packet: " << rawPacket->getRawDataLen() << std::endl;
 
-    txDev->sendPacket(*rawPacket);
+
+    packetQueue.addPacket(rawPacket, getTimeMicros() + PACKET_DELAY_US);
+
+    // txDev->sendPacket(*rawPacket);
 
     // if (dev->sendPacket(*rawPacket)) {
     //     std::cout << "Forwarded packet" << std::endl;
@@ -84,6 +91,12 @@ int main() {
     std::cout << "Receive device MTU: " << rxDev->getMtu() << std::endl;
     std::cout << "Send device MTU: " << txDev->getMtu() << std::endl;
 
+    packetSender = PacketSender(&packetQueue, txDev);
+    if (!packetSender.startSending()) {
+        std::cerr << "Unable to start packet sending" << std::endl;
+        exit(1);
+    }
+
     if (!rxDev->startCapture(onPacketArrival, &programName)) {
         std::cerr << "Unable to start packet capture for receiving device" << std::endl;
         exit(1);
@@ -92,15 +105,19 @@ int main() {
     std::cout << "Running packet capture... Press Ctrl + C to exit" << std::endl;
     // Relies on Ctrl+C to set running to false
     while (running) {
-        msleep(5);
+        msleep(100);
     }
 
     std::cout << "Stopping capture of packets" << std::endl;
     rxDev->stopCapture();
     // Needs to be after capture has been stopped, so more are not added to the
     // queue
-    std::cout << "Closing queue" << std::endl;
-    queue.close();
+
+    std::cout << "Stopping transmission" << std::endl;
+    packetSender.stopSending();
+
+    std::cout << "Cleanup packet queue" << std::endl;
+    packetQueue.close();
 
     std::cout << "Closing dev" << std::endl;
     rxDev->close();
