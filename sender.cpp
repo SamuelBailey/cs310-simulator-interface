@@ -12,17 +12,36 @@ void *PacketSender::sendLoop() {
     // isSending must be modified elsewhere to stop the loop
     while (isSending) {
         long timeToSend = this->queue->nextPacketTime();
+        long now = getTimeMicros();
         if (timeToSend == -1) {
             // Back off for a short amount of time when queue is empty
             usleep(BACK_OFF_TIME_US);
             continue;
-        } else if (timeToSend <= getTimeMicros()) {
+        } else if (timeToSend <= now) {
+            std::cout << "Sending packet. Time to send: " << timeToSend << ", now: " << now << std::endl;
             this->queue->lockQueue();
-                this->sendDev->sendPacket(this->queue->nextPacket());
+                const pcpp::RawPacket *packetToSend = this->queue->nextPacket();
+
+                if (packetToSend) {
+                    std::cout << "Packet to send is NOT NULL before sending" << std::endl;
+                } else {
+                    std::cout << "Packet to send IS NULL before sending!!" << std::endl;
+                }
+
+                this->sendDev->sendPacket(*packetToSend);
                 this->queue->deleteHead();
+
+                if (packetToSend) {
+                    std::cout << "Packet to send is NOT NULL after sending!!" << std::endl;
+                } else {
+                    std::cout << "Packet to send IS NULL after sending" << std::endl;
+                }
             this->queue->unlockQueue();
+        } else {
+            std::cout << "Time to send: " << timeToSend << ", now: " << now << std::endl;
         }
     }
+    std::cout << "Finished PacketSender loop" << std::endl;
     pthread_exit(nullptr);
 }
 

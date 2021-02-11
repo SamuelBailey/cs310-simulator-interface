@@ -7,12 +7,11 @@
 // #include <PlatformSpecificUtils.h>
 #include <Logger.h>
 
-#include "packet-scheduler.h"
 #include "helper-functions.h"
 #include "scheduler.h"
 #include "sender.h"
 
-#define PACKET_DELAY_US 2000000 // Microseconds to delay packet transmission
+#define PACKET_DELAY_US 200000 // Microseconds to delay packet transmission
 
 static volatile bool running = true;
 
@@ -51,9 +50,9 @@ static void onPacketArrival(pcpp::RawPacket *rawPacket, pcpp::PcapLiveDevice *de
     // Check length of packet being sent
     std::cout << "Length of packet: " << rawPacket->getRawDataLen() << std::endl;
 
-
+    std::cout << "Queue length before adding: " << packetQueue.queueLength() << std::endl;
     packetQueue.addPacket(rawPacket, getTimeMicros() + PACKET_DELAY_US);
-
+    std::cout << "Queue length after adding: " << packetQueue.queueLength() << std::endl;
     // txDev->sendPacket(*rawPacket);
 
     // if (dev->sendPacket(*rawPacket)) {

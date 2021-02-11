@@ -28,7 +28,7 @@ public:
     /**
      * \return packet contained within by const reference
      */
-    const pcpp::RawPacket &getPacket() const;
+    const pcpp::RawPacket *getPacket() const;
 };
 
 class PacketQueue {
@@ -48,6 +48,11 @@ public:
      * Instantiate an empty queue
      */
     PacketQueue();
+
+    /**
+     * \return The number of elements in the queue
+     */
+    int queueLength();
 
     /**
      * Adds a packet to the queue. Takes ownership of the packet and cleans it
@@ -73,7 +78,7 @@ public:
      * \return a const reference to RawPacket at the head of the list. nullptr
      * if the list is empty
      */
-    const pcpp::RawPacket &nextPacket();
+    const pcpp::RawPacket *nextPacket();
     /**
      * Frees the memory for the packet currently at the head of the queue, and
      * advances the queue
@@ -90,14 +95,4 @@ public:
      * Cleanup the packet queue
      */
     void close();
-};
-
-class PacketScheduler {
-private:
-
-public:
-    /**
-     * \param timeToSendUs The time to send the packet since the epoch
-     */
-    void schedulePacket(long timeToSendUs);
 };
