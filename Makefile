@@ -6,7 +6,7 @@ HEADERS = $(shell find -name "*.h")
 SRCS = $(shell find -name "*.cpp")
 OBJS = $(SRCS:.cpp=.o)
 
-DEBUG_BUILD_FLAGS = -O0 -g -Wall
+DEBUG_BUILD_FLAGS = -O0 -g -Wall -std=c++11
 
 # %.o: %.cpp $(HEADERS)
 # 	$(CXX) -c -o $@ $< $(PCAPPP_BUILD_FLAGS) $(PCAPPP_INCLUDES)
