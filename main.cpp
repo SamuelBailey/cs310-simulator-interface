@@ -11,7 +11,7 @@
 #include "scheduler.h"
 #include "sender.h"
 
-#define PACKET_DELAY_US 200000 // Microseconds to delay packet transmission
+#define PACKET_DELAY_US 2000000 // Microseconds to delay packet transmission
 
 static volatile bool running = true;
 

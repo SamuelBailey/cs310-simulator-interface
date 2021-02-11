@@ -21,27 +21,12 @@ void *PacketSender::sendLoop() {
             std::cout << "Sending packet. Time to send: " << timeToSend << ", now: " << now << std::endl;
             this->queue->lockQueue();
                 const pcpp::RawPacket *packetToSend = this->queue->nextPacket();
-
-                if (packetToSend) {
-                    std::cout << "Packet to send is NOT NULL before sending" << std::endl;
-                } else {
-                    std::cout << "Packet to send IS NULL before sending!!" << std::endl;
-                }
-
                 this->sendDev->sendPacket(*packetToSend);
                 this->queue->deleteHead();
-
-                if (packetToSend) {
-                    std::cout << "Packet to send is NOT NULL after sending!!" << std::endl;
-                } else {
-                    std::cout << "Packet to send IS NULL after sending" << std::endl;
-                }
             this->queue->unlockQueue();
-        } else {
-            std::cout << "Time to send: " << timeToSend << ", now: " << now << std::endl;
-        }
+        } 
     }
-    std::cout << "Finished PacketSender loop" << std::endl;
+    std::cout << "PacketSender Thread terminated" << std::endl;
     pthread_exit(nullptr);
 }
 
