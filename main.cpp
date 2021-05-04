@@ -12,6 +12,7 @@
 #include "sender.h"
 
 #define PACKET_DELAY_US 2000000 // Microseconds to delay packet transmission
+// #define PACKET_DELAY_US 0
 
 static volatile bool running = true;
 
@@ -38,8 +39,13 @@ static void schedulePacketAfter(pcpp::RawPacket *rawPacket, int milliseconds) {
 // }
 
 static void onPacketArrival(pcpp::RawPacket *rawPacket, pcpp::PcapLiveDevice *dev, void *cookie) {
+    // static int i = -1;
+    // i = (i+1) % 4;
+    // if (i == 3) {
+    //     return;
+    // }
+
     std::string *progName = (std::string *)cookie;
-    // std::cout << "Received a packet within program " << *progName << std::endl;
     pcpp::Packet parsedPacket(rawPacket);
     if (parsedPacket.isPacketOfType(pcpp::ICMP)) {
         std::cout << "Received a ping" << std::endl;
@@ -47,19 +53,12 @@ static void onPacketArrival(pcpp::RawPacket *rawPacket, pcpp::PcapLiveDevice *de
 
     std::cout << "Received packet with pointer " << rawPacket << std::endl;
 
-    // Check length of packet being sent
     std::cout << "Length of packet: " << rawPacket->getRawDataLen() << std::endl;
 
     std::cout << "Queue length before adding: " << packetQueue.queueLength() << std::endl;
     packetQueue.addPacket(rawPacket, getTimeMicros() + PACKET_DELAY_US);
+    // packetQueue.addPacket(rawPacket, getTimeMicros());
     std::cout << "Queue length after adding: " << packetQueue.queueLength() << std::endl;
-    // txDev->sendPacket(*rawPacket);
-
-    // if (dev->sendPacket(*rawPacket)) {
-    //     std::cout << "Forwarded packet" << std::endl;
-    // } else {
-    //     std::cout << "Failed to forward packet" << std::endl;
-    // }
 }
 
 int main() {
